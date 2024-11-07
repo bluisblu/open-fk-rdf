@@ -1,5 +1,5 @@
 use std::{fs::File, io::{self, Read}};
-use open_fk_rdf::{decode_rdf, encode_xml};
+use open_fk_rdf::decode_rdf;
 
 fn main() -> io::Result<()> {
     let mut file = File::open("profile.rdf")?;

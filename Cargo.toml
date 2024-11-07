@@ -5,3 +5,8 @@ edition = "2021"
 
 [dependencies]
 encoding = "0.2.33"
+
+[dev-dependencies]
+quick-xml = { version = "0.37.0", features = ["serialize"] }
+serde = { version = "1.0.214", features = ["derive"] }
+serde_with = "3.11.0"
