@@ -35,4 +35,4 @@ This should work with any file. See the examples folder for a quick-xml implemen
 
 ## Why does this exist?
 
-This library exists to preserve the functionality of a beloved childhood game, U.B. Funkeys. While I can't take credit for reverse-engineering the file format, this project aims to provide a foundation for working with the data by separating out the encoding logic.
+This library exists to preserve the functionality of a beloved childhood game, U.B. Funkeys, and provides a foundation for working with the data by separating out the encoding logic.
