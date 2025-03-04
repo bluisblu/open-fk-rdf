@@ -32,7 +32,3 @@ fn main() -> io::Result<()> {
 }
 ```
 This should work with any file. See the examples folder for a quick-xml implementation.
-
-## Why does this exist?
-
-This library exists to preserve the functionality of a beloved childhood game, U.B. Funkeys, and provides a foundation for working with the data by separating out the encoding logic.
