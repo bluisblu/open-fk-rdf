@@ -133,7 +133,7 @@ fn main() -> io::Result<()> {
     let mut encoded_data = Vec::new();
     file.read_to_end(&mut encoded_data)?;
 
-    let decoded_xml = decode_rdf(&encoded_data);
+    let decoded_xml = decode_rdf(&encoded_data).unwrap();
     let deserialized_struct = from_str::<Profile>(&decoded_xml).unwrap();
     println!("{:#?}", deserialized_struct);
 

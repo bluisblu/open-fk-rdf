@@ -1,6 +1,6 @@
 # open-fk-rdf
 
-An encoding/decoding library for rdf files, ported from [OpenFK](https://github.com/GittyMac/OpenFK/) into rust.
+An encoding/decoding library for RDFv2 files, ported from [OpenFK](https://github.com/GittyMac/OpenFK/) into rust.
 
 ## Features
 
@@ -25,7 +25,7 @@ fn main() -> io::Result<()> {
     let mut encoded_data = Vec::new();
     file.read_to_end(&mut encoded_data)?;
 
-    let decoded_xml = decode_rdf(&encoded_data);
+    let decoded_xml = decode_rdf(&encoded_data).unwrap();
     println!("Decoded XML: {}", decoded_xml);
 
     Ok(())
@@ -36,8 +36,3 @@ This should work with any file. See the examples folder for a quick-xml implemen
 ## Why does this exist?
 
 This library exists to preserve the functionality of a beloved childhood game, U.B. Funkeys. While I can't take credit for reverse-engineering the file format, this project aims to provide a foundation for working with the data by separating out the encoding logic.
-
-
-## TODO:
-
-- Proper error handling using `Result`

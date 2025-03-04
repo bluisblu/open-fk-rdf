@@ -31,71 +31,58 @@ static START: [u8; 8] = [
     0xFF, 0x00, 0xFF, 0xAC, 0xEB, 0x96, 0xC4, 0x2A
 ];
 
-pub fn decode_rdf(encoded: &[u8]) -> String {
+pub fn decode_rdf(encoded: &[u8]) -> Result<String, &'static str> {
     let encoded_str = ISO_8859_1.decode(encoded, DecoderTrap::Strict)
-        .expect("Failed to decode bytes to ISO-8859-1 string");
+        .map_err(|_| "Failed to decode bytes to ISO-8859-1 string")?;
 
     let mut current_col = 0;
-    let arr: Vec<char> = encoded_str.chars().collect();
-    let mut ret: Vec<char> = Vec::with_capacity(arr.len());
+    let mut ret = Vec::with_capacity(encoded_str.len());
     let mut endchar = 0;
 
-    for &character in &arr {
-        for i in 0..256 {
-            if COL[current_col][i] == character as u8 {
-                ret.push(CODE[i] as char);
-                if CODE[i] as char == '>' {
-                    endchar = ret.len();
-                }
-                break;
+    for character in encoded_str.chars() {
+        if let Some(i) = COL[current_col].iter().position(|&b| b == character as u8) {
+            let decoded_char = CODE.get(i).copied().unwrap_or_default() as char;
+            ret.push(decoded_char);
+            if decoded_char == '>' {
+                endchar = ret.len();
             }
         }
-        current_col += 1;
-        if current_col > 7 {
-            current_col = 0;
-        }
+
+        current_col = (current_col + 1) % 8;
     }
 
     let ret_string: String = ret.into_iter().collect();
 
     let start_len = START.len();
-
     if endchar > start_len {
-        return ret_string.chars().skip(start_len).take(endchar - start_len).collect();
+        return Ok(ret_string.chars().skip(start_len).take(endchar - start_len).collect());
     }
 
-    String::new()
+    Ok(String::new())
 }
 
-pub fn encode_xml(decoded: &str) -> Vec<u8> {
-    let iso_8859_1 = ISO_8859_1;
+pub fn encode_xml(decoded: &str) -> Result<Vec<u8>, &'static str> {
     let mut current_col = 0;
-    let arr: Vec<char> = decoded.chars().collect();
-    let mut ret_bytes = Vec::with_capacity(arr.len());
+    let mut ret_bytes = Vec::with_capacity(decoded.len());
 
-    for &character in &arr {
-        for i in 0..256 {
-            if CODE[i] as char == character {
-                ret_bytes.push(COL[current_col][i]);
-                break;
+    for character in decoded.chars() {
+        if let Some(i) = CODE.iter().position(|&b| b as char == character) {
+            if let Some(&col_byte) = COL.get(current_col).and_then(|col| col.get(i)) {
+                ret_bytes.push(col_byte);
             }
         }
-        current_col += 1;
-        if current_col > 7 {
-            current_col = 0;
-        }
+        current_col = (current_col + 1) % 8;
     }
 
-    let start_str: String = START.iter().map(|&b| b as char).collect(); // Collect u8 to char
-    let end_str: String = END[current_col].iter().map(|&b| b as char).collect(); // Collect u8 to char
+    let start_str: String = START.iter().map(|&b| b as char).collect();
+    let end_str: String = END.get(current_col)
+        .map(|arr| arr.iter().map(|&b| b as char).collect())
+        .unwrap_or_default();
 
-    let ret_str: String = ret_bytes.iter().map(|&b| b as char).collect(); // Convert ret to String
-    let final_string = format!("{}{}{}", start_str, ret_str, end_str);
+    let final_string = format!("{}{}{}", start_str, ret_bytes.iter().map(|&b| b as char).collect::<String>(), end_str);
 
-    let bytes = iso_8859_1.encode(&final_string, EncoderTrap::Strict)
-        .expect("Failed to encode string to ISO-8859-1");
-    
-    bytes
+    ISO_8859_1.encode(&final_string, EncoderTrap::Strict)
+        .map_err(|_| "Failed to encode string to ISO-8859-1")
 }
 
 #[cfg(test)]
@@ -122,8 +109,8 @@ mod tests {
         230, 33, 64, 5, 128, 251, 10, 65, 152, 78, 18, 76, 197, 168, 69, 28, 231, 45, 80, 76, 144, 248, 21, 16, 244, 32, 87, 8, 216, 170, 73, 93, 181, 55, 87, 30, 147, 237, 11, 66, 183, 116, 16, 76, 137, 231, 26, 30, 249, 61, 15, 78, 212, 170, 89, 80, 171, 73, 56, 76, 197, 180, 86, 12, 225, 37, 70, 5, 150, 252, 16, 28, 230, 122, 63, 102, 197, 168, 69, 11, 231, 49, 92, 7, 219, 133, 
         115, 95, 181, 100, 18, 80, 140, 252, 28, 18, 230, 100, 29, 82, 232, 130, 89, 95, 181, 100, 14, 10, 132, 229, 16, 19, 252, 37, 64, 31, 197, 167, 71, 114, 159, 100, 18, 76, 197, 180, 20, 16, 250, 32, 65, 76, 202, 182, 116, 117, 181, 100, 18, 76, 217, 226, 24, 18, 248, 33, 64, 31, 197, 167, 71, 114, 159, 100, 18, 80, 202, 252, 11, 10, 251, 47, 12, 97, 239, 168, 89, 67, 241, 45, 64, 24, 197, 252, 16, 18, 240, 54, 15, 78, 215, 176, 65, 75, 161, 112, 10, 90, 199, 168, 21, 26, 227, 33, 94, 81, 199, 184, 91, 95, 186, 122, 63, 102, 197, 168, 69, 27, 252, 55, 70, 30, 
         132, 235, 13, 22, 250, 42, 65, 76, 202, 182, 116, 117, 181, 100, 14, 15, 141, 233, 13, 12, 181, 107, 12, 97, 239, 168, 89, 67, 244, 54, 70, 9, 131, 233, 26, 11, 230, 100, 29, 82, 232, 130, 89, 95, 169, 53, 71, 9, 150, 252, 10, 95, 186, 122, 63, 102, 217, 167, 9, 13, 250, 34, 91, 0, 128, 182, 121, 127, 149, 68, 50, 108, 229, 136];
-        let decoded = decode_rdf(encoded);
-        let reencoded = encode_xml(&decoded);
+        let decoded = decode_rdf(encoded).unwrap();
+        let reencoded = encode_xml(&decoded).unwrap();
         assert_eq!(encoded, reencoded);
     }
 }
